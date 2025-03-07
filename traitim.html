@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+  <head>
+    <title>Heart Effect with Countdown</title>
+    <meta name="Generator" content="EditPlus" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        font-size: 5rem;
+      }
+      #countdown {
+        position: absolute;
+      }
+      canvas {
+        display: none;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="countdown">3</div>
+    <canvas id="pinkboard"></canvas>
+    <audio id="background-music" loop autoplay>
+      <source
+        src="https://nhacchuong123.com/nhac-chuong/abcdefghij/anh-van-luon-doi-em-anh-chi-thuong-minh-nang-remix-tiktok.mp3"
+        type="audio/mp3"
+      />
+    </audio>
+
+    <script>
+      let countdown = 3;
+      const countdownElement = document.getElementById("countdown");
+      const canvas = document.getElementById("pinkboard");
+      const music = document.getElementById("background-music");
+
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown === 0) {
+          clearInterval(countdownInterval);
+          countdownElement.style.display = "none";
+          canvas.style.display = "block";
+          music.play();
+          startHeartEffect();
+        } else {
+          countdownElement.innerText = countdown;
+        }
+      }, 1000);
+
+      function startHeartEffect() {
+        var context = canvas.getContext("2d");
+        var particles = [];
+        var particleRate = 500 / 2;
+        var time;
+
+        function Point(x, y) {
+          this.x = x || 0;
+          this.y = y || 0;
+        }
+        Point.prototype.clone = function () {
+          return new Point(this.x, this.y);
+        };
+        Point.prototype.length = function (length) {
+          if (typeof length === "undefined")
+            return Math.sqrt(this.x * this.x + this.y * this.y);
+          this.normalize();
+          this.x *= length;
+          this.y *= length;
+          return this;
+        };
+        Point.prototype.normalize = function () {
+          var length = this.length();
+          this.x /= length;
+          this.y /= length;
+          return this;
+        };
+
+        function pointOnHeart(t) {
+          return new Point(
+            160 * Math.pow(Math.sin(t), 3),
+            130 * Math.cos(t) -
+              50 * Math.cos(2 * t) -
+              20 * Math.cos(3 * t) -
+              10 * Math.cos(4 * t) +
+              25
+          );
+        }
+
+        var image = (function () {
+          var canvas = document.createElement("canvas");
+          var context = canvas.getContext("2d");
+          canvas.width = 30;
+          canvas.height = 30;
+          context.beginPath();
+          var t = -Math.PI;
+          var point = pointOnHeart(t);
+          context.moveTo(point.x + 15, 15 - point.y);
+          while (t < Math.PI) {
+            t += 0.01;
+            point = pointOnHeart(t);
+            context.lineTo(point.x + 15, 15 - point.y);
+          }
+          context.closePath();
+          context.fillStyle = "#ea80b0";
+          context.fill();
+          var img = new Image();
+          img.src = canvas.toDataURL();
+          return img;
+        })();
+
+        function render() {
+          requestAnimationFrame(render);
+          var newTime = new Date().getTime() / 1000;
+          var deltaTime = newTime - (time || newTime);
+          time = newTime;
+
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          var amount = particleRate * deltaTime;
+          for (var i = 0; i < amount; i++) {
+            var pos = pointOnHeart(Math.PI - 2 * Math.PI * Math.random());
+            var dir = pos.clone().length(100);
+            particles.push({
+              x: canvas.width / 2 + pos.x,
+              y: canvas.height / 2 - pos.y,
+              dx: dir.x,
+              dy: -dir.y,
+              age: 0,
+            });
+          }
+
+          particles.forEach((p) => {
+            p.x += p.dx * deltaTime;
+            p.y += p.dy * deltaTime;
+            p.age += deltaTime;
+            var size = 30 * (1 - p.age / 2);
+            context.globalAlpha = 1 - p.age / 2;
+            context.drawImage(
+              image,
+              p.x - size / 2,
+              p.y - size / 2,
+              size,
+              size
+            );
+          });
+
+          particles = particles.filter((p) => p.age < 2);
+        }
+
+        function onResize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        window.onresize = onResize;
+
+        setTimeout(() => {
+          onResize();
+          render();
+        }, 10);
+      }
+    </script>
+  </body>
+</html>
